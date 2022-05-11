@@ -10,13 +10,12 @@
     (string-trim line)))
 
 (define (read-from-api bearer-token)
-  (let ([auth-header (format "Authorization: Bearer ~a" bearer-token)])
-    (http-sendrecv
-     "api.twitter.com"
-     "https://api.twitter.com/2/tweets/search/recent?query=from:twitterdev"
-     #:ssl? #t
-     #:headers (list auth-header))))
+  (define auth-header (format "Authorization: Bearer ~a" bearer-token))
+  (define hc (http-conn-open "api.twitter.com"  #:ssl? #t))
+  (http-conn-send! hc "https://api.twitter.com/2/tweets/search/recent?query=from:twitterdev" #:headers (list auth-header))
+  (call-with-values (λ () (http-conn-recv! hc)) (λ (status-line headers data-port) (println headers)))
+  (http-conn-close! hc)) 
 
 (module* main #f
   (define bearer-token (load-bearer-token "/home/dougfort/.config/investigator/token"))
-  (call-with-values (lambda () (read-from-api bearer-token)) (lambda (a b c) (println a))))
+  (read-from-api bearer-token))
